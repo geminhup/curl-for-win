@@ -40,10 +40,7 @@ _cpu="$2"
       bsd)   _HOST='x86_64-pc-bsd';;
     esac
 
-    [ "${_cpu}" = '32' ] && _TARGET='i686-w64-mingw32'
-    [ "${_cpu}" = '64' ] && _TARGET='x86_64-w64-mingw32'
-
-    options="--build=${_HOST} --host=${_TARGET}"
+    options="--build=${_HOST} --host=${_TRIPLET}"
   fi
 
   # Build
@@ -56,14 +53,14 @@ _cpu="$2"
   find . -name '*.Plo' -type f -delete
   find . -name '*.pc'  -type f -delete
 
+  export ZLIB_CFLAGS='-I../../zlib'
+  export ZLIB_LIBS='-L../../zlib -lz'
+
   export CC="${_CCPREFIX}gcc -static-libgcc"
   export LDFLAGS="-m${_cpu}"
   export CFLAGS="${LDFLAGS} -fno-ident -U__STRICT_ANSI__ -DNGHTTP2_STATICLIB"
   [ "${_BRANCH#*extmingw*}" = "${_BRANCH}" ] && [ "${_cpu}" = '32' ] && CFLAGS="${CFLAGS} -fno-asynchronous-unwind-tables"
   export CXXFLAGS="${CFLAGS}"
-
-  export ZLIB_CFLAGS='-I../../zlib'
-  export ZLIB_LIBS='-L../../zlib -lz'
 
   # shellcheck disable=SC2086
   ./configure ${options} \

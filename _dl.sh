@@ -1,26 +1,26 @@
 #!/bin/sh -x
 
-# Copyright 2015-2017 Viktor Szakats <https://github.com/vszakats>
+# Copyright 2015-2018 Viktor Szakats <https://github.com/vszakats>
 # See LICENSE.md
 
 export ZLIB_VER_='1.2.11'
 export ZLIB_HASH=629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff
-export LIBIDN2_VER_='2.0.3'
-export LIBIDN2_HASH=4335149ce7a5c615edb781574d38f658672780331064fb17354a10e11a5308cd
-export NGHTTP2_VER_='1.26.0'
-export NGHTTP2_HASH=7ac7ef5c83449303bf38d16eb45caa9e1bd0bb3abb2afc0ab1e6b3aadbded6dd
+export BROTLI_VER_='1.0.3'
+export BROTLI_HASH=7948154166ef8556f8426a4ede219aaa98a81a5baffe1f7cf2523fa67d59cd1c
+export LIBIDN2_VER_='2.0.4'
+export LIBIDN2_HASH=644b6b03b285fb0ace02d241d59483d98bc462729d8bb3608d5cad5532f3d2f0
+export NGHTTP2_VER_='1.31.0'
+export NGHTTP2_HASH=36573c2dc74f0da872b02a3ccf1f1419d6b992dd4703dc866e5a289d36397ac7
 export CARES_VER_='1.13.0'
 export CARES_HASH=03f708f1b14a26ab26c38abd51137640cb444d3ec72380b21b20f1a8d2861da7
-export LIBRESSL_VER_='2.5.5'
-export LIBRESSL_HASH=e57f5e3d5842a81fe9351b6e817fcaf0a749ca4ef35a91465edba9e071dce7c4
-export OPENSSL_VER_='1.1.0f'
-export OPENSSL_HASH=12f746f3f2493b2f39da7ecf63d7ee19c6ac9ec6a4fcd8c229da8a522cb12765
+export OPENSSL_VER_='1.1.0g'
+export OPENSSL_HASH=de4d501267da39310905cb6dc8c6121f7a2cad45a7707f76df828fe1b85073af
 export LIBRTMP_VER_='2.4+20151223'
 export LIBRTMP_HASH=5c032f5c8cc2937eb55a81a94effdfed3b0a0304b6376147b86f951e225e3ab5
 export LIBSSH2_VER_='1.8.0'
 export LIBSSH2_HASH=39f34e2f6835f4b992cafe8625073a88e5a28ba78f83e8099610a7b3af4676d4
-export CURL_VER_='7.56.1'
-export CURL_HASH=8eed282cf3a0158d567a0feaa3c4619e8e847970597b5a2c81879e8f0d1a39d1
+export CURL_VER_='7.58.0'
+export CURL_HASH=6a813875243609eb75f37fa72044e4ad618b55ec15a4eafdac2df6a7e800e3e3
 
 # Quit if any of the lines fail
 set -e
@@ -38,6 +38,7 @@ unset _py
 
 # Install required component
 # TODO: add `--progress-bar off` when pip 9.1.0 hits the drives
+${_py} pip --version
 ${_py} pip --disable-pip-version-check install --user --upgrade pip
 ${_py} pip install --user pefile
 
@@ -54,11 +55,11 @@ gpg_recv_keys() {
 gpg --version | grep gpg
 
 if [ "${_BRANCH#*dev*}" != "${_BRANCH}" ]; then
-   _patsuf='.dev'
+  _patsuf='.dev'
 elif [ "${_BRANCH#*master*}" = "${_BRANCH}" ]; then
-   _patsuf='.test'
+  _patsuf='.test'
 else
-   _patsuf=''
+  _patsuf=''
 fi
 
 if [ "${os}" = 'win' ]; then
@@ -79,6 +80,18 @@ tar -xvf pack.bin > /dev/null 2>&1 || exit 1
 rm pack.bin
 rm -f -r zlib && mv zlib-* zlib
 [ -f "zlib${_patsuf}.patch" ] && dos2unix < "zlib${_patsuf}.patch" | patch -N -p1 -d zlib
+
+# Relatively high curl binary size + extra dependency overhead aiming mostly
+# to optimize webpage download sizes, so allow to disable it.
+if [ "${_BRANCH#*nobrotli*}" = "${_BRANCH}" ]; then
+  # brotli
+  curl -o pack.bin -L --proto-redir =https "https://github.com/google/brotli/archive/v${BROTLI_VER_}.tar.gz" || exit 1
+  openssl dgst -sha256 pack.bin | grep -q "${BROTLI_HASH}" || exit 1
+  tar -xvf pack.bin > /dev/null 2>&1 || exit 1
+  rm pack.bin
+  rm -f -r brotli && mv brotli-* brotli
+  [ -f "brotli${_patsuf}.patch" ] && dos2unix < "brotli${_patsuf}.patch" | patch -N -p1 -d brotli
+fi
 
 # nghttp2
 curl -o pack.bin -L --proto-redir =https "https://github.com/nghttp2/nghttp2/releases/download/v${NGHTTP2_VER_}/nghttp2-${NGHTTP2_VER_}.tar.xz" || exit 1
@@ -121,36 +134,23 @@ if [ "${_BRANCH#*cares*}" != "${_BRANCH}" ]; then
   [ -f "c-ares${_patsuf}.patch" ] && dos2unix < "c-ares${_patsuf}.patch" | patch -N -p1 -d c-ares
 fi
 
-if [ "${_BRANCH#*libressl*}" != "${_BRANCH}" ]; then
-  # libressl
-  curl \
-    -o pack.bin "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VER_}.tar.gz" \
-    -o pack.sig "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VER_}.tar.gz.asc" || exit 1
-  gpg_recv_keys A1EB079B8D3EB92B4EBD3139663AF51BD5E4D8D5
-  gpg --verify-options show-primary-uid-only --verify pack.sig pack.bin || exit 1
-  openssl dgst -sha256 pack.bin | grep -q "${LIBRESSL_HASH}" || exit 1
-  tar -xvf pack.bin > /dev/null 2>&1 || exit 1
-  rm pack.bin
-  rm -f -r libressl && mv libressl-* libressl
+# openssl
+if [ "${_BRANCH#*dev*}" != "${_BRANCH}" ]; then
+  OPENSSL_VER_='1.1.1-pre1'
+  curl -o pack.bin -L --proto-redir =https https://www.openssl.org/source/openssl-1.1.1-pre1.tar.gz || exit 1
 else
-  # openssl
-  if [ "${_BRANCH#*dev*}" != "${_BRANCH}" ]; then
-    OPENSSL_VER_='1.1.1-dev'
-    curl -o pack.bin -L --proto-redir =https https://github.com/openssl/openssl/archive/master.tar.gz || exit 1
-  else
-    curl \
-      -o pack.bin "https://www.openssl.org/source/openssl-${OPENSSL_VER_}.tar.gz" \
-      -o pack.sig "https://www.openssl.org/source/openssl-${OPENSSL_VER_}.tar.gz.asc" || exit 1
-    # From https://www.openssl.org/community/team.html
-    gpg_recv_keys 8657ABB260F056B1E5190839D9C4D26D0E604491
-    gpg --verify-options show-primary-uid-only --verify pack.sig pack.bin || exit 1
-    openssl dgst -sha256 pack.bin | grep -q "${OPENSSL_HASH}" || exit 1
-  fi
-  tar -xvf pack.bin > /dev/null 2>&1 || exit 1
-  rm pack.bin
-  rm -f -r openssl && mv openssl-* openssl
-  [ -f "openssl${_patsuf}.patch" ] && dos2unix < "openssl${_patsuf}.patch" | patch -N -p1 -d openssl
+  curl \
+    -o pack.bin "https://www.openssl.org/source/openssl-${OPENSSL_VER_}.tar.gz" \
+    -o pack.sig "https://www.openssl.org/source/openssl-${OPENSSL_VER_}.tar.gz.asc" || exit 1
+  # From https://www.openssl.org/community/team.html
+  gpg_recv_keys 8657ABB260F056B1E5190839D9C4D26D0E604491
+  gpg --verify-options show-primary-uid-only --verify pack.sig pack.bin || exit 1
+  openssl dgst -sha256 pack.bin | grep -q "${OPENSSL_HASH}" || exit 1
 fi
+tar -xvf pack.bin > /dev/null 2>&1 || exit 1
+rm pack.bin
+rm -f -r openssl && mv openssl-* openssl
+[ -f "openssl${_patsuf}.patch" ] && dos2unix < "openssl${_patsuf}.patch" | patch -N -p1 -d openssl
 
 # Do not include this by default to avoid an unnecessary libcurl dependency
 # and potential licensing issues.
@@ -165,8 +165,8 @@ fi
 
 # libssh2
 if [ "${_BRANCH#*dev*}" != "${_BRANCH}" ]; then
-  LIBSSH2_VER_='1.8.1-dev2'
-  curl -o pack.bin -L --proto-redir =https https://github.com/libssh2/libssh2/archive/1d0e694d7d02f19a303bcf1eac18a5bea818f6db.tar.gz || exit 1
+  LIBSSH2_VER_='1.8.1-dev'
+  curl -o pack.bin -L --proto-redir =https https://github.com/libssh2/libssh2/archive/bcd492163b71608f8e46cdc864741d6c566ce9bc.tar.gz || exit 1
 else
   curl \
     -o pack.bin -L --proto-redir =https "https://libssh2.org/download/libssh2-${LIBSSH2_VER_}.tar.gz" \
@@ -182,8 +182,8 @@ rm -f -r libssh2 && mv libssh2-* libssh2
 
 # curl
 if [ "${_BRANCH#*dev*}" != "${_BRANCH}" ]; then
-  CURL_VER_='7.56.1-dev'
-  curl -o pack.bin -L --proto-redir =https https://github.com/curl/curl/archive/4440b6ad575385b433dc4b8a28ef80000aa95f7f.tar.gz || exit 1
+  CURL_VER_='7.59.0-dev'
+  curl -o pack.bin -L --proto-redir =https https://github.com/curl/curl/archive/63f6b3b22077c6fd4a75ce4ceac7258509af412c.tar.gz || exit 1
 else
   curl \
     -o pack.bin "https://curl.haxx.se/download/curl-${CURL_VER_}.tar.xz" \

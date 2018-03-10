@@ -16,13 +16,29 @@ _cpu="$2"
 (
   cd "${_NAM}" || exit
 
+  # Detect host OS
+  case "$(uname)" in
+    *_NT*)   os='win';;
+    Linux*)  os='linux';;
+    Darwin*) os='mac';;
+    *BSD)    os='bsd';;
+  esac
+
   # Prepare build
 
   find . -name '*.dll' -type f -delete
+  find . -name '*.def' -type f -delete
 
-  # FIXME: This will not create a fully release-compliant file tree,
-  #        f.e. documentation will be incomplete.
-  [ -f 'Makefile' ] || ./buildconf.bat
+  if [ ! -f 'Makefile' ]; then
+    if [ "${os}" = 'win' ]; then
+      # FIXME: This will not create a fully release-compliant file tree,
+      #        e.g. documentation will be incomplete.
+      ./buildconf.bat
+    else
+      # FIXME: Replace this with `./buildconf` call
+      cp -f -p Makefile.dist Makefile
+    fi
+  fi
 
   # Build
 
@@ -69,21 +85,20 @@ _cpu="$2"
 
   export ZLIB_PATH=../../zlib
   options="${options}-zlib"
+  if [ -d ../brotli ]; then
+    options="${options}-brotli"
+    export BROTLI_PATH=../../brotli/pkg/usr/local
+    export BROTLI_LIBS='-Wl,-Bstatic -lbrotlidec-static -lbrotlicommon-static -Wl,-Bdynamic'
+  fi
 
-  [ -d ../libressl ] && export OPENSSL_PATH=../../libressl
-  [ -d ../openssl ]  && export OPENSSL_PATH=../../openssl
+  [ -d ../openssl ] && export OPENSSL_PATH=../../openssl
   if [ -n "${OPENSSL_PATH}" ]; then
     options="${options}-ssl"
     export OPENSSL_INCLUDE="${OPENSSL_PATH}/include"
     export OPENSSL_LIBPATH="${OPENSSL_PATH}"
     export OPENSSL_LIBS='-lssl -lcrypto'
-    # This breaks pre-7.55.0 builds
-    if [ "$(echo "${CURL_VER_}" | cut -c -5)" != '7.55.' ]; then
-      options="${options}-winssl"
-    fi
-  else
-    options="${options}-winssl"
   fi
+  options="${options}-winssl"
   if [ -d ../libssh2 ]; then
     options="${options}-ssh2"
     export LIBSSH2_PATH=../../libssh2
@@ -125,12 +140,23 @@ _cpu="$2"
 
   export CROSSPREFIX="${_CCPREFIX}"
 
+  if [ "${CC}" = 'mingw-clang' ]; then
+    export CURL_CC=clang
+    if [ "${os}" != 'win' ]; then
+      CURL_CFLAG_EXTRAS="-target ${_TRIPLET} --sysroot ${_SYSROOT} ${CURL_CFLAG_EXTRAS}"
+      [ "${os}" = 'linux' ] && CURL_LDFLAG_EXTRAS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${CURL_LDFLAG_EXTRAS}"
+      CURL_LDFLAG_EXTRAS="-target ${_TRIPLET} --sysroot ${_SYSROOT} ${CURL_LDFLAG_EXTRAS}"
+    fi
+  fi
+
   ${_MAKE} mingw32-clean
   ${_MAKE} "${options}"
 
   # Download CA bundle
   [ -f '../ca-bundle.crt' ] || \
     curl -R -fsS -o '../ca-bundle.crt' 'https://curl.haxx.se/ca/cacert.pem'
+
+  openssl dgst -sha256 '../ca-bundle.crt'
 
   # Make steps for determinism
 
@@ -165,7 +191,7 @@ _cpu="$2"
   # Create package
 
   _BAS="${_NAM}-${_VER}-win${_cpu}-mingw"
-  [ -d ../libressl ] && _BAS="${_BAS}-libressl"
+  [ -d ../brotli ] || _BAS="${_BAS}-nobrotli"
   [ -d ../librtmp ] && _BAS="${_BAS}-librtmp"
   _DST="$(mktemp -d)/${_BAS}"
 
@@ -201,12 +227,14 @@ _cpu="$2"
   cp -f -p ../ca-bundle.crt         "${_DST}/bin/curl-ca-bundle.crt"
 
   [ -d ../zlib ]     && cp -f -p ../zlib/README      "${_DST}/COPYING-zlib.txt"
-  [ -d ../libssh2 ]  && cp -f -p ../libssh2/COPYING  "${_DST}/COPYING-libssh2.txt"
-  [ -d ../nghttp2 ]  && cp -f -p ../nghttp2/COPYING  "${_DST}/COPYING-nghttp2.txt"
-  [ -d ../libidn2 ]  && cp -f -p ../libidn2/COPYING  "${_DST}/COPYING-libidn2.txt"
-  [ -d ../librtmp ]  && cp -f -p ../librtmp/COPYING  "${_DST}/COPYING-librtmp.txt"
-  [ -d ../libressl ] && cp -f -p ../libressl/COPYING "${_DST}/COPYING-libressl.txt"
-  [ -d ../openssl ]  && cp -f -p ../openssl/LICENSE  "${_DST}/LICENSE-openssl.txt"
+  if [ "$(echo "${CURL_VER_}" | cut -c -5)" != '7.56.' ]; then
+    [ -d ../brotli ]   && cp -f -p ../brotli/LICENSE   "${_DST}/COPYING-brotli.txt"
+  fi
+  [ -d ../libssh2 ]  && cp -f -p ../libssh2/COPYING "${_DST}/COPYING-libssh2.txt"
+  [ -d ../nghttp2 ]  && cp -f -p ../nghttp2/COPYING "${_DST}/COPYING-nghttp2.txt"
+  [ -d ../libidn2 ]  && cp -f -p ../libidn2/COPYING "${_DST}/COPYING-libidn2.txt"
+  [ -d ../librtmp ]  && cp -f -p ../librtmp/COPYING "${_DST}/COPYING-librtmp.txt"
+  [ -d ../openssl ]  && cp -f -p ../openssl/LICENSE "${_DST}/LICENSE-openssl.txt"
 
   if [ "${_BRANCH#*master*}" = "${_BRANCH}" ]; then
     cp -f -p src/*.map                "${_DST}/bin/"

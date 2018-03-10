@@ -19,6 +19,7 @@ _cpu="$2"
   # Prepare build
 
   find . -name '*.dll' -type f -delete
+  find . -name '*.def' -type f -delete
 
   # Build
 
@@ -36,7 +37,6 @@ _cpu="$2"
   export WITH_ZLIB=1
   export LINK_ZLIB_STATIC=1
 
-  [ -d ../libressl ] && export OPENSSL_PATH=../../libressl
   [ -d ../openssl ]  && export OPENSSL_PATH=../../openssl
   if [ -n "${OPENSSL_PATH}" ]; then
 #   export LINK_OPENSSL_STATIC=yes; export OPENSSL_LIBS_STAT='crypto ssl'
@@ -52,6 +52,15 @@ _cpu="$2"
   export LIBSSH2_DLL_A_SUFFIX=.dll
 
   export CROSSPREFIX="${_CCPREFIX}"
+
+  if [ "${CC}" = 'mingw-clang' ]; then
+    export LIBSSH2_CC=clang
+    if [ "${os}" != 'win' ]; then
+      LIBSSH2_CFLAG_EXTRAS="-target ${_TRIPLET} --sysroot ${_SYSROOT} ${LIBSSH2_CFLAG_EXTRAS}"
+      [ "${os}" = 'linux' ] && LIBSSH2_LDFLAG_EXTRAS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${LIBSSH2_LDFLAG_EXTRAS}"
+      LIBSSH2_LDFLAG_EXTRAS="-target ${_TRIPLET} --sysroot ${_SYSROOT} ${LIBSSH2_LDFLAG_EXTRAS}"
+    fi
+  fi
 
   (
     cd win32 || exit
@@ -84,7 +93,6 @@ _cpu="$2"
   # Create package
 
   _BAS="${_NAM}-${_VER}-win${_cpu}-mingw"
-  [ -d ../libressl ] && _BAS="${_BAS}-libressl"
   _DST="$(mktemp -d)/${_BAS}"
 
   mkdir -p "${_DST}/docs"
@@ -108,8 +116,7 @@ _cpu="$2"
   cp -f -p README        "${_DST}/README.txt"
   cp -f -p RELEASE-NOTES "${_DST}/RELEASE-NOTES.txt"
 
-  [ -d ../libressl ] && cp -f -p ../libressl/COPYING "${_DST}/COPYING-libressl.txt"
-  [ -d ../openssl ]  && cp -f -p ../openssl/LICENSE  "${_DST}/LICENSE-openssl.txt"
+  [ -d ../openssl ]  && cp -f -p ../openssl/LICENSE "${_DST}/LICENSE-openssl.txt"
 
   if [ "${_BRANCH#*master*}" = "${_BRANCH}" ]; then
     cp -f -p win32/*.map   "${_DST}/bin/"
