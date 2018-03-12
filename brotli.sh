@@ -60,9 +60,7 @@ _cpu="$2"
       "-DCMAKE_CXX_COMPILER_TARGET=${_TRIPLET}" \
       "-DCMAKE_C_COMPILER=clang" \
       "-DCMAKE_CXX_COMPILER=clang++" \
-      "-DCMAKE_C_FLAGS=${_CFLAGS}" \
-      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc" \
-      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc" \
+      "-DCMAKE_C_FLAGS=-Wl,-static-libgcc ${_CFLAGS}" \
       '-DCMAKE_INSTALL_PREFIX=/usr/local'
   else
     unset CC
