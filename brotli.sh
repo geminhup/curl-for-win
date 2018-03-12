@@ -46,11 +46,14 @@ _cpu="$2"
   find . -name '*.Plo' -type f -delete
   find . -name '*.pc'  -type f -delete
 
-  _CFLAGS="-static-libgcc -m${_cpu} -fno-ident -DMINGW_HAS_SECURE_API"
+  _CFLAGS="-m${_cpu} -fno-ident -DMINGW_HAS_SECURE_API"
   [ "${_BRANCH#*extmingw*}" = "${_BRANCH}" ] && [ "${_cpu}" = '32' ] && _CFLAGS="${_CFLAGS} -fno-asynchronous-unwind-tables"
 
   if [ "${CC}" = 'mingw-clang' ]; then
     unset CC
+
+    _LDFLAGS='-static-libgcc'
+    [ "${os}" = 'linux' ] && _LDFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_LDFLAGS}"
 
     # shellcheck disable=SC2086
     cmake . "${options}" \
@@ -61,6 +64,8 @@ _cpu="$2"
       "-DCMAKE_C_COMPILER=clang" \
       "-DCMAKE_CXX_COMPILER=clang++" \
       "-DCMAKE_C_FLAGS=${_CFLAGS}" \
+      "-DCMAKE_EXE_LINKER_FLAGS=${_LDFLAGS}" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=${_LDFLAGS}" \
       '-DCMAKE_INSTALL_PREFIX=/usr/local'
   else
     unset CC
@@ -69,7 +74,7 @@ _cpu="$2"
     cmake . "${options}" \
       "-DCMAKE_C_COMPILER=${_CCPREFIX}gcc" \
       "-DCMAKE_CXX_COMPILER=${_CCPREFIX}g++" \
-      "-DCMAKE_C_FLAGS=${_CFLAGS}" \
+      "-DCMAKE_C_FLAGS=-static-libgcc ${_CFLAGS}" \
       '-DCMAKE_INSTALL_PREFIX=/usr/local'
   fi
 
