@@ -27,11 +27,11 @@ _cpu="$2"
   esac
 
   if [ "${os}" = 'win' ]; then
-    options='-GMSYS Makefiles'
+    options='"-GMSYS Makefiles"'
     # Without this option, the value '/usr/local' becomes 'msys64/usr/local'
     export MSYS2_ARG_CONV_EXCL='-DCMAKE_INSTALL_PREFIX='
   else
-    options='-DCMAKE_SYSTEM_NAME=Windows'
+    options='"-DCMAKE_SYSTEM_NAME=Windows"'
   fi
 
   # Build
@@ -53,10 +53,10 @@ _cpu="$2"
     unset CC
 
     _LDFLAGS='-static-libgcc'
-    [ "${os}" = 'linux' ] && _LDFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_LDFLAGS}"
-    [ "${os}" = 'linux' ] && _CFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_CFLAGS}"
+    [ "${os}" = 'linux' ] && options="\"-DCMAKE_PREFIX_PATH=$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1)\" ${options}"
 
-    cmake . "${options}" \
+    # shellcheck disable=SC2086
+    cmake . ${options} \
       "-DCMAKE_SYSROOT=${_SYSROOT}" \
       "-DCMAKE_LIBRARY_ARCHITECTURE=${_TRIPLET}" \
       "-DCMAKE_C_COMPILER_TARGET=${_TRIPLET}" \
@@ -70,7 +70,8 @@ _cpu="$2"
   else
     unset CC
 
-    cmake . "${options}" \
+    # shellcheck disable=SC2086
+    cmake . ${options} \
       "-DCMAKE_C_COMPILER=${_CCPREFIX}gcc" \
       "-DCMAKE_CXX_COMPILER=${_CCPREFIX}g++" \
       "-DCMAKE_C_FLAGS=-static-libgcc ${_CFLAGS}" \
