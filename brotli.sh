@@ -54,8 +54,8 @@ _cpu="$2"
 
     _LDFLAGS='-static-libgcc'
     [ "${os}" = 'linux' ] && _LDFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_LDFLAGS}"
+    [ "${os}" = 'linux' ] && _CFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_CFLAGS}"
 
-    # shellcheck disable=SC2086
     cmake . "${options}" \
       "-DCMAKE_SYSROOT=${_SYSROOT}" \
       "-DCMAKE_LIBRARY_ARCHITECTURE=${_TRIPLET}" \
@@ -70,7 +70,6 @@ _cpu="$2"
   else
     unset CC
 
-    # shellcheck disable=SC2086
     cmake . "${options}" \
       "-DCMAKE_C_COMPILER=${_CCPREFIX}gcc" \
       "-DCMAKE_CXX_COMPILER=${_CCPREFIX}g++" \
