@@ -33,17 +33,13 @@ case "$(uname)" in
   *BSD)    os='bsd';;
 esac
 
-if [ "${os}" = 'win' ]; then
-  _pip='python -m pip'
-else
-  _pip='pip3'
+if [ "${os}" != 'win' ]; then
+  # Install required component
+  # TODO: add `--progress-bar off` when pip 9.1.0 hits the drives
+  pip3 --version
+  pip3 --disable-pip-version-check install --user --upgrade pip
+  pip3 install --user pefile
 fi
-
-# Install required component
-# TODO: add `--progress-bar off` when pip 9.1.0 hits the drives
-${_pip} --version
-${_pip} --disable-pip-version-check install --user --upgrade pip
-${_pip} install --user pefile
 
 alias curl='curl -fsS --connect-timeout 15 --retry 3'
 alias gpg='gpg --batch --keyserver-options timeout=15 --keyid-format LONG'
@@ -63,17 +59,6 @@ elif [ "${_BRANCH#*master*}" = "${_BRANCH}" ]; then
   _patsuf='.test'
 else
   _patsuf=''
-fi
-
-if [ "${os}" = 'win' ]; then
-  if [ "${_BRANCH#*mingwext*}" != "${_BRANCH}" ]; then
-    # mingw
-    curl -o pack.bin -L 'https://downloads.sourceforge.net/mingw-w64/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/7.1.0/threads-posix/sjlj/x86_64-7.1.0-release-posix-sjlj-rt_v5-rev0.7z' || exit 1
-    openssl dgst -sha256 pack.bin | grep -q a117ec6126c9cc31e89498441d66af3daef59439c36686e80cebf29786e17c13 || exit 1
-    # Will unpack into './mingw64'
-    7z x -y pack.bin > /dev/null || exit 1
-    rm pack.bin
-  fi
 fi
 
 # zlib

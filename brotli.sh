@@ -47,7 +47,7 @@ _cpu="$2"
   find . -name '*.pc'  -type f -delete
 
   _CFLAGS="-m${_cpu} -fno-ident -DMINGW_HAS_SECURE_API"
-  [ "${_BRANCH#*extmingw*}" = "${_BRANCH}" ] && [ "${_cpu}" = '32' ] && _CFLAGS="${_CFLAGS} -fno-asynchronous-unwind-tables"
+  [ "${_cpu}" = '32' ] && _CFLAGS="${_CFLAGS} -fno-asynchronous-unwind-tables"
 
   if [ "${CC}" = 'mingw-clang' ]; then
     unset CC
@@ -101,6 +101,7 @@ _cpu="$2"
   ../_sign.sh ${_pkg}/bin/*.exe
   ../_sign.sh ${_pkg}/bin/*.dll
 
+  touch -c -r "${_ref}" ${_pkg}/include/brotli/*.h
   touch -c -r "${_ref}" ${_pkg}/bin/*.exe
   touch -c -r "${_ref}" ${_pkg}/bin/*.dll
   touch -c -r "${_ref}" ${_pkg}/lib/pkgconfig/*.pc
