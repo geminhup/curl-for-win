@@ -52,28 +52,22 @@ _cpu="$2"
   if [ "${CC}" = 'mingw-clang' ]; then
     unset CC
 
-    _LDFLAGS='-static-libgcc'
-    [ "${os}" = 'linux' ] && options="-DCMAKE_PREFIX_PATH=$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${options}"
+    [ "${os}" = 'linux' ] && _CFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_CFLAGS}"
 
-    # shellcheck disable=SC2086
-    cmake . ${options} \
+    cmake . "${options}" \
       "-DCMAKE_SYSROOT=${_SYSROOT}" \
       "-DCMAKE_LIBRARY_ARCHITECTURE=${_TRIPLET}" \
       "-DCMAKE_C_COMPILER_TARGET=${_TRIPLET}" \
-      "-DCMAKE_CXX_COMPILER_TARGET=${_TRIPLET}" \
       "-DCMAKE_C_COMPILER=clang" \
-      "-DCMAKE_CXX_COMPILER=clang++" \
       "-DCMAKE_C_FLAGS=${_CFLAGS}" \
-      "-DCMAKE_EXE_LINKER_FLAGS=${_LDFLAGS}" \
-      "-DCMAKE_SHARED_LINKER_FLAGS=${_LDFLAGS}" \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc" \
       '-DCMAKE_INSTALL_PREFIX=/usr/local'
   else
     unset CC
 
-    # shellcheck disable=SC2086
-    cmake . ${options} \
+    cmake . "${options}" \
       "-DCMAKE_C_COMPILER=${_CCPREFIX}gcc" \
-      "-DCMAKE_CXX_COMPILER=${_CCPREFIX}g++" \
       "-DCMAKE_C_FLAGS=-static-libgcc ${_CFLAGS}" \
       '-DCMAKE_INSTALL_PREFIX=/usr/local'
   fi
