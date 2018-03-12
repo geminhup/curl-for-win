@@ -27,11 +27,11 @@ _cpu="$2"
   esac
 
   if [ "${os}" = 'win' ]; then
-    options='"-GMSYS Makefiles"'
+    options='-GMSYS Makefiles'
     # Without this option, the value '/usr/local' becomes 'msys64/usr/local'
     export MSYS2_ARG_CONV_EXCL='-DCMAKE_INSTALL_PREFIX='
   else
-    options='"-DCMAKE_SYSTEM_NAME=Windows"'
+    options='-DCMAKE_SYSTEM_NAME=Windows'
   fi
 
   # Build
@@ -53,7 +53,7 @@ _cpu="$2"
     unset CC
 
     _LDFLAGS='-static-libgcc'
-    [ "${os}" = 'linux' ] && options="\"-DCMAKE_PREFIX_PATH=$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1)\" ${options}"
+    [ "${os}" = 'linux' ] && options="-DCMAKE_PREFIX_PATH=$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${options}"
 
     # shellcheck disable=SC2086
     cmake . ${options} \
