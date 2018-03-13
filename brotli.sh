@@ -48,12 +48,13 @@ _cpu="$2"
   [ "${_cpu}" = '32' ] && _CFLAGS="${_CFLAGS} -fno-asynchronous-unwind-tables"
 
   options='-DCMAKE_SYSTEM_NAME=Windows'
+  options='-DCMAKE_POLICY_DEFAULT_CMP0056=1'
   options="${options} -DCMAKE_INSTALL_PREFIX=/usr/local"
 
   if [ "${CC}" = 'mingw-clang' ]; then
     unset CC
 
-    [ "${os}" = 'linux' ] && _CFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_CFLAGS}"
+    [ "${os}" = 'linux' ] && _LDFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_CFLAGS}"
 
     # shellcheck disable=SC2086
     cmake . ${options} "${opt_gmsys}" \
@@ -65,8 +66,8 @@ _cpu="$2"
       "-DCMAKE_CXX_COMPILER=clang++" \
       "-DCMAKE_C_FLAGS=${_CFLAGS}" \
       "-DCMAKE_CXX_FLAGS=${_CFLAGS}" \
-      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc" \
-      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc"
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc ${_LDFLAGS}" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc ${_LDFLAGS}"
   else
     unset CC
 
