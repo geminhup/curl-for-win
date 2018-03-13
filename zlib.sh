@@ -34,9 +34,10 @@ _cpu="$2"
 
   # Build
 
-  rm -fr CMakeFiles CMakeCache.txt cmake_install.cmake
+  rm -fr pkg CMakeFiles CMakeCache.txt cmake_install.cmake
 
   find . -name '*.o'   -type f -delete
+  find . -name '*.obj' -type f -delete
   find . -name '*.a'   -type f -delete
   find . -name '*.lo'  -type f -delete
   find . -name '*.la'  -type f -delete
@@ -46,6 +47,7 @@ _cpu="$2"
 
   _CFLAGS="-m${_cpu} -fno-ident -D_LARGEFILE64_SOURCE=1 -D_LFS64_LARGEFILE=1"
   [ "${_cpu}" = '32' ] && _CFLAGS="${_CFLAGS} -fno-asynchronous-unwind-tables"
+  _LDFLAGS='-Wl,--nxcompat -Wl,--dynamicbase'
   [ "${_cpu}" = '64' ] && [ "${_CCVER}" -ge '05' ] && _LDFLAGS="${_LDFLAGS} -Wl,--high-entropy-va -Wl,--image-base,0x155000000"
 
   options='-DCMAKE_SYSTEM_NAME=Windows'
@@ -83,6 +85,7 @@ _cpu="$2"
   # DESTDIR= + CMAKE_INSTALL_PREFIX
   _pkg='pkg/usr/local'
 
+  ls -l ${_pkg}/bin/*.exe
   ls -l ${_pkg}/bin/*.dll
   ls -l ${_pkg}/lib/*.a
 
@@ -91,11 +94,10 @@ _cpu="$2"
   # Stick to the name used by win32/Makefile.gcc
   mv -f ${_pkg}/lib/libzlibstatic.a ${_pkg}/lib/libz.a
 
-  # Hack to make libssh2 and curl makefile.m32 files
-  # be able to find these. They should be in the same
-  # directory:
+  # libssh2 and curl makefile.m32 assume the headers and lib to be in the
+  # same directory. Make sure to copy the static library only:
   cp -f -p ${_pkg}/include/*.h "${_pkg}/"
-  cp -f -p ${_pkg}/lib/*.a     "${_pkg}/"
+  cp -f -p ${_pkg}/lib/libz.a  "${_pkg}/"
 
   # Make steps for determinism
 
@@ -110,6 +112,7 @@ _cpu="$2"
 
   touch -c -r "${_ref}" ${_pkg}/include/*.h
   touch -c -r "${_ref}" ${_pkg}/bin/*.dll
+# touch -c -r "${_ref}" ${_pkg}/share/pkgconfig/*.pc
   touch -c -r "${_ref}" ${_pkg}/lib/*.a
 
   # Tests
@@ -123,10 +126,11 @@ _cpu="$2"
 
   mkdir -p "${_DST}"
 
-  cp -f -p ${_pkg}/include/*.h "${_DST}/"
-  cp -f -p ${_pkg}/lib/*.a     "${_DST}/"
-  cp -f -p ChangeLog           "${_DST}/ChangeLog.txt"
-  cp -f -p README              "${_DST}/README.txt"
+  cp -f -p ${_pkg}/include/*.h          "${_DST}/"
+# cp -f -p ${_pkg}/share/pkgconfig/*.pc "${_DST}/"
+  cp -f -p ${_pkg}/lib/*.a              "${_DST}/"
+  cp -f -p ChangeLog                    "${_DST}/ChangeLog.txt"
+  cp -f -p README                       "${_DST}/README.txt"
 
   unix2dos -k "${_DST}"/*.txt
 
