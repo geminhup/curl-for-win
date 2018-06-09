@@ -71,7 +71,7 @@ _cpu="$2"
       "-DCMAKE_CXX_COMPILER=clang++${_CCSUFFIX}" \
       "-DCMAKE_C_FLAGS=${_CFLAGS}" \
       "-DCMAKE_CXX_FLAGS=${_CFLAGS}" \
-      '-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++' \
+      '-DCMAKE_EXE_LINKER_FLAGS=' \
       '-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc'
   else
     unset CC
