@@ -6,27 +6,29 @@ variables:
   GIT_DEPTH: "10"
   DOCKER_IMAGE: debian:unstable
 
-script:
-  - |
-    time docker pull "${DOCKER_IMAGE}"
-    time docker run -it -v "${PWD}:${PWD}" -w "${PWD}" \
-      --env-file <(env | grep -E '^(TRAVIS_|BINTRAY_|GPG_|VIRUSTOTAL_|CODESIGN_|CC|GITLAB_|CI_)') \
-      "${DOCKER_IMAGE}" sh -c '
-      cat /etc/*-release
-      export _CCSUFFIX='-6.0'
-      [ "${CC}" = 'mingw-clang' ] && _optpkg="clang${_CCSUFFIX}"
-      [ "${TRAVIS_BRANCH#*dev*}" != "${TRAVIS_BRANCH}" ] && _optpkg="${_optpkg} autoconf automake libtool"
-      dpkg --add-architecture i386
-      apt-get -qq update
-      apt-get -qq install \
-        curl git make python3-pip \
-        gcc-mingw-w64 ${_optpkg} cmake \
-        zip time jq dos2unix osslsigncode wine64 wine32
-      ./_build.sh'
+stages:
+  - build
 
-artifacts:
-  paths:
-    - public
-
-only:
-  - test-gitlab
+build:
+  script:
+    - |
+      time docker pull "${DOCKER_IMAGE}"
+      time docker run -it -v "${PWD}:${PWD}" -w "${PWD}" \
+        --env-file <(env | grep -E '^(TRAVIS_|BINTRAY_|GPG_|VIRUSTOTAL_|CODESIGN_|CC|GITLAB_|CI_)') \
+        "${DOCKER_IMAGE}" sh -c '
+        cat /etc/*-release
+        export _CCSUFFIX='-6.0'
+        [ "${CC}" = 'mingw-clang' ] && _optpkg="clang${_CCSUFFIX}"
+        [ "${TRAVIS_BRANCH#*dev*}" != "${TRAVIS_BRANCH}" ] && _optpkg="${_optpkg} autoconf automake libtool"
+        dpkg --add-architecture i386
+        apt-get -qq update
+        apt-get -qq install \
+          curl git make python3-pip \
+          gcc-mingw-w64 ${_optpkg} cmake \
+          zip time jq dos2unix osslsigncode wine64 wine32
+        ./_build.sh'
+  artifacts:
+    paths:
+      - public
+  only:
+    - test-gitlab
