@@ -1,6 +1,9 @@
 ---
 # Docs: https://docs.gitlab.com/ce/pages/
+# yamllint disable rule:line-length
 image: docker:latest
+services:
+  - docker:dind
 
 variables:
   GIT_DEPTH: "10"
