@@ -20,7 +20,7 @@ matrix:
       compiler: mingw-clang
       services: [docker]
       # https://hub.docker.com/_/debian/
-      env: DOCKER_IMAGE=debian:testing
+      env: DOCKER_IMAGE=debian:unstable
 
 before_install:
   - |
