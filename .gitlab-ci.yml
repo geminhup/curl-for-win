@@ -6,10 +6,7 @@ variables:
   GIT_DEPTH: "10"
   DOCKER_IMAGE: debian:unstable
 
-stages:
-  - build
-
-build:
+compile:
   script:
     - |
       time docker pull "${DOCKER_IMAGE}"
