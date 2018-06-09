@@ -1,6 +1,6 @@
 #!/bin/sh -ex
 
-# Copyright 2017-2018 Viktor Szakats <https://github.com/vszakats>
+# Copyright 2017-2018 Viktor Szakats <https://vszakats.net/>
 # See LICENSE.md
 
 export _NAM
@@ -51,8 +51,10 @@ _cpu="$2"
   [ "${_cpu}" = '64' ] && [ "${_CCVER}" -ge '05' ] && _LDFLAGS="${_LDFLAGS} -Wl,--high-entropy-va -Wl,--image-base,0x155000000"
 
   options='-DCMAKE_SYSTEM_NAME=Windows'
+  options="${options} -DCMAKE_BUILD_TYPE=Release"
   options="${options} -DCMAKE_RC_COMPILER=${_CCPREFIX}windres"
   options="${options} -DCMAKE_RC_FLAGS=-DGCC_WINDRES"
+  options="${options} -DCMAKE_INSTALL_MESSAGE=NEVER"
   options="${options} -DCMAKE_INSTALL_PREFIX=/usr/local"
 
   if [ "${CC}" = 'mingw-clang' ]; then
@@ -79,8 +81,7 @@ _cpu="$2"
       "-DCMAKE_SHARED_LINKER_FLAGS=${_LDFLAGS}"
   fi
 
-  make
-  make install "DESTDIR=$(pwd)/pkg" > /dev/null
+  make install "DESTDIR=$(pwd)/pkg"
 
   # DESTDIR= + CMAKE_INSTALL_PREFIX
   _pkg='pkg/usr/local'
@@ -131,7 +132,7 @@ _cpu="$2"
   cp -f -p ChangeLog                    "${_DST}/ChangeLog.txt"
   cp -f -p README                       "${_DST}/README.txt"
 
-  unix2dos -k "${_DST}"/*.txt
+  unix2dos -q -k "${_DST}"/*.txt
 
   ../_pack.sh "$(pwd)/${_ref}"
   ../_ul.sh

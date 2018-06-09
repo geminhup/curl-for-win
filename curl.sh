@@ -1,6 +1,6 @@
 #!/bin/sh -ex
 
-# Copyright 2014-2018 Viktor Szakats <https://github.com/vszakats>
+# Copyright 2014-2018 Viktor Szakats <https://vszakats.net/>
 # See LICENSE.md
 
 export _NAM
@@ -112,10 +112,6 @@ _cpu="$2"
     options="${options}-ares"
     export LIBCARES_PATH=../../c-ares/pkg/usr/local
   fi
-  if [ -d ../librtmp ]; then
-    options="${options}-rtmp"
-    export LIBRTMP_PATH=../../librtmp
-  fi
   if [ -d ../libidn2 ]; then
     options="${options}-idn2"
     export LIBIDN2_PATH=../../libidn2/pkg/usr/local
@@ -191,7 +187,6 @@ _cpu="$2"
 
   _BAS="${_NAM}-${_VER}-win${_cpu}-mingw"
   [ -d ../brotli ] || _BAS="${_BAS}-nobrotli"
-  [ -d ../librtmp ] && _BAS="${_BAS}-librtmp"
   _DST="$(mktemp -d)/${_BAS}"
 
   mkdir -p "${_DST}/docs/libcurl/opts"
@@ -212,7 +207,6 @@ _cpu="$2"
       fi
     done
   )
-  cp -f -p docs/libcurl/*.html      "${_DST}/docs/libcurl/"
   cp -f -p docs/*.md                "${_DST}/docs/"
   cp -f -p include/curl/*.h         "${_DST}/include/curl/"
   cp -f -p src/*.exe                "${_DST}/bin/"
@@ -232,7 +226,6 @@ _cpu="$2"
   [ -d ../libssh2 ]  && cp -f -p ../libssh2/COPYING "${_DST}/COPYING-libssh2.txt"
   [ -d ../nghttp2 ]  && cp -f -p ../nghttp2/COPYING "${_DST}/COPYING-nghttp2.txt"
   [ -d ../libidn2 ]  && cp -f -p ../libidn2/COPYING "${_DST}/COPYING-libidn2.txt"
-  [ -d ../librtmp ]  && cp -f -p ../librtmp/COPYING "${_DST}/COPYING-librtmp.txt"
   [ -d ../openssl ]  && cp -f -p ../openssl/LICENSE "${_DST}/LICENSE-openssl.txt"
 
   if [ "${_BRANCH#*master*}" = "${_BRANCH}" ]; then
@@ -241,9 +234,9 @@ _cpu="$2"
     cp -f -p lib/*.def                "${_DST}/bin/"
   fi
 
-  unix2dos -k "${_DST}"/*.txt
-  unix2dos -k "${_DST}"/docs/*.md
-  unix2dos -k "${_DST}"/docs/*.txt
+  unix2dos -q -k "${_DST}"/*.txt
+  unix2dos -q -k "${_DST}"/docs/*.md
+  unix2dos -q -k "${_DST}"/docs/*.txt
 
   ../_pack.sh "$(pwd)/${_ref}"
   ../_ul.sh

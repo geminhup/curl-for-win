@@ -1,6 +1,6 @@
 #!/bin/sh -ex
 
-# Copyright 2014-2018 Viktor Szakats <https://github.com/vszakats>
+# Copyright 2014-2018 Viktor Szakats <https://vszakats.net/>
 # See LICENSE.md
 
 export _NAM
@@ -33,7 +33,7 @@ _cpu="$2"
     unset _HOST
     case "${os}" in
       win)   _HOST='x86_64-pc-mingw32';;
-      linux) _HOST='x86_64-pc-linux';;
+      linux) _HOST='x86_64-pc-linux';;  # x86_64-pc-linux-gnu
       mac)   _HOST='x86_64-apple-darwin';;
       bsd)   _HOST='x86_64-pc-bsd';;
     esac
@@ -70,7 +70,7 @@ _cpu="$2"
     '--prefix=/usr/local' \
     --silent
 # make clean > /dev/null
-  make install "DESTDIR=$(pwd)/pkg" # > /dev/null
+  make install "DESTDIR=$(pwd)/pkg" # > /dev/null # V=1
 
   # DESTDIR= + --prefix=
   _pkg='pkg/usr/local'
@@ -112,7 +112,7 @@ _cpu="$2"
   cp -f -p COPYING                    "${_DST}/COPYING.txt"
   cp -f -p README                     "${_DST}/README.txt"
 
-  unix2dos -k "${_DST}"/*.txt
+  unix2dos -q -k "${_DST}"/*.txt
 
 # ../_pack.sh "$(pwd)/${_ref}"
 # ../_ul.sh

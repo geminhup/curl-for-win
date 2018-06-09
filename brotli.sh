@@ -1,6 +1,6 @@
 #!/bin/sh -ex
 
-# Copyright 2017-2018 Viktor Szakats <https://github.com/vszakats>
+# Copyright 2017-2018 Viktor Szakats <https://vszakats.net/>
 # See LICENSE.md
 
 export _NAM
@@ -48,13 +48,14 @@ _cpu="$2"
   [ "${_cpu}" = '32' ] && _CFLAGS="${_CFLAGS} -fno-asynchronous-unwind-tables"
 
   options='-DCMAKE_SYSTEM_NAME=Windows'
-  options='-DCMAKE_POLICY_DEFAULT_CMP0056=1'
+  options="${options} -DCMAKE_BUILD_TYPE=Release"
+  options="${options} -DCMAKE_INSTALL_MESSAGE=NEVER"
   options="${options} -DCMAKE_INSTALL_PREFIX=/usr/local"
 
   if [ "${CC}" = 'mingw-clang' ]; then
     unset CC
 
-    [ "${os}" = 'linux' ] && _LDFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_CFLAGS}"
+    [ "${os}" = 'linux' ] && _CFLAGS="-L$(find "/usr/lib/gcc/${_TRIPLET}" -name '*posix' | head -n 1) ${_CFLAGS}"
 
     # shellcheck disable=SC2086
     cmake . ${options} "${opt_gmsys}" \
@@ -66,8 +67,8 @@ _cpu="$2"
       "-DCMAKE_CXX_COMPILER=clang++" \
       "-DCMAKE_C_FLAGS=${_CFLAGS}" \
       "-DCMAKE_CXX_FLAGS=${_CFLAGS}" \
-      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc ${_LDFLAGS}" \
-      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc ${_LDFLAGS}"
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc"
   else
     unset CC
 
@@ -78,8 +79,7 @@ _cpu="$2"
       "-DCMAKE_C_FLAGS=-static-libgcc ${_CFLAGS}"
   fi
 
-  make
-  make install "DESTDIR=$(pwd)/pkg" > /dev/null
+  make install "DESTDIR=$(pwd)/pkg"
 
   # DESTDIR= + CMAKE_INSTALL_PREFIX
   _pkg='pkg/usr/local'
@@ -131,7 +131,7 @@ _cpu="$2"
   cp -f -p ${_pkg}/lib/*.a            "${_DST}/lib/"
   cp -f -p README.md                  "${_DST}/README.md"
 
-  unix2dos -k "${_DST}"/*.md
+  unix2dos -q -k "${_DST}"/*.md
 
   ../_pack.sh "$(pwd)/${_ref}"
   ../_ul.sh

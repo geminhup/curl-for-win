@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright 2014-2018 Viktor Szakats <https://github.com/vszakats>
+# Copyright 2014-2018 Viktor Szakats <https://vszakats.net/>
 # See LICENSE.md
 
 cd "$(dirname "$0")" || exit
@@ -93,4 +93,3 @@ do_upload() {
 
 do_upload '.tar.xz'
 do_upload '.zip'
-do_upload '.7z'  # compatibility

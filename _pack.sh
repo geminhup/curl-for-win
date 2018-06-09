@@ -1,6 +1,6 @@
 #!/bin/sh -x
 
-# Copyright 2014-2018 Viktor Szakats <https://github.com/vszakats>
+# Copyright 2014-2018 Viktor Szakats <https://vszakats.net/>
 # See LICENSE.md
 
 cd "$(dirname "$0")" || exit
@@ -14,7 +14,7 @@ case "$(uname)" in
 esac
 
 # Map tar to GNU tar, if it exists (e.g. on macOS)
-which gtar > /dev/null && alias tar=gtar
+command -v gtar > /dev/null && alias tar=gtar
 
 _cdo="$(pwd)"
 
@@ -37,6 +37,7 @@ touch -c -r "$1" "${_fn}"
 
 find "${_DST}" -depth -type d -exec touch -c -r "$1" '{}' \;
 
+# NOTE: This isn't effective on MSYS2
 find "${_DST}" \( -name '*.exe' -or -name '*.dll' \) -exec chmod -x {} +
 
 create_pack() {
@@ -52,6 +53,7 @@ create_pack() {
         --owner=0 --group=0 --numeric-owner --mode=go=rX,u+rw,a-s --sort=name \
         "${_BAS}" | xz > "${_cdo}/${_BAS}${arch_ext}";;
       .zip)    zip -q -9 -X -r "${_cdo}/${_BAS}${arch_ext}" "${_BAS}";;
+      # Requires: p7zip (MSYS2, Homebrew, Linux rpm), p7zip-full (Linux deb)
       .7z)     7z a -bd -r -mx "${_cdo}/${_BAS}${arch_ext}" "${_BAS}" > /dev/null;;
     esac
     touch -c -r "$1" "${_cdo}/${_BAS}${arch_ext}"
@@ -60,6 +62,5 @@ create_pack() {
 
 create_pack "$1" '.tar.xz'
 create_pack "$1" '.zip'
-create_pack "$1" '.7z'  # compatibility
 
 rm -f -r "${_DST:?}"

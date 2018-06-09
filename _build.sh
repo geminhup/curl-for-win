@@ -1,15 +1,15 @@
 #!/bin/sh -ex
 
-# Copyright 2015-2018 Viktor Szakats <https://github.com/vszakats>
+# Copyright 2015-2018 Viktor Szakats <https://vszakats.net/>
 # See LICENSE.md
 
 # Requirements (not a comprehensive list at this point):
 #   Windows:
-#     MSYS2: zip p7zip mingw-w64-{i686,x86_64}-{clang,jq,osslsigncode,python3-pip} gpg python3
+#     MSYS2: zip mingw-w64-{i686,x86_64}-{clang,jq,osslsigncode,python3-pip} gpg python3
 #   Linux
-#     zip p7zip-full binutils-mingw-w64 gcc-mingw-w64 gnupg-curl jq osslsigncode dos2unix realpath wine
+#     zip binutils-mingw-w64 gcc-mingw-w64 gnupg-curl jq osslsigncode dos2unix realpath wine
 #   Mac:
-#     brew install xz gnu-tar p7zip mingw-w64 jq osslsigncode dos2unix gpg gnu-sed wine
+#     brew install xz gnu-tar mingw-w64 jq osslsigncode dos2unix gpg gnu-sed wine
 
 cd "$(dirname "$0")" || exit
 
@@ -17,7 +17,7 @@ export _BRANCH="${APPVEYOR_REPO_BRANCH}${TRAVIS_BRANCH}${CI_BUILD_REF_NAME}${GIT
 [ -n "${_BRANCH}" ] || _BRANCH="$(git symbolic-ref --short --quiet HEAD)"
 [ -n "${_BRANCH}" ] || _BRANCH='master'
 export _URL=''
-which git > /dev/null 2>&1 && _URL="$(git ls-remote --get-url | sed 's|.git$||')"
+command -v git > /dev/null 2>&1 && _URL="$(git ls-remote --get-url | sed 's|.git$||')"
 [ -n "${_URL}" ] || _URL="https://github.com/${APPVEYOR_REPO_NAME}${TRAVIS_REPO_SLUG}"
 
 # Detect host OS
@@ -69,10 +69,9 @@ build_single_target() {
     export _MAKE='mingw32-make'
 
     # Install required component
-    # TODO: add `--progress-bar off` when pip 9.1.0 hits the drives
+    # TODO: add `--progress-bar off` when pip 10.0.0 is available
     pip3 --version
-    pip3 --disable-pip-version-check install --user --upgrade pip
-    pip3 install --user pefile
+    pip3 --disable-pip-version-check install --user pefile
   else
     if [ "${CC}" = 'mingw-clang' ] && [ "${os}" = 'mac' ]; then
       export PATH="/usr/local/opt/llvm/bin:${_ori_path}"
@@ -101,7 +100,7 @@ build_single_target() {
     _CCVER="$("${_CCPREFIX}gcc" -dumpversion | sed -e 's/\<[0-9]\>/0&/g' -e 's/\.//g' | cut -c -2)"
   fi
 
-  which osslsigncode > /dev/null 2>&1 || unset CODESIGN_KEY
+  command -v osslsigncode > /dev/null 2>&1 || unset CODESIGN_KEY
 
   time ./zlib.sh       "${ZLIB_VER_}" "${_cpu}"
   time ./brotli.sh   "${BROTLI_VER_}" "${_cpu}"
@@ -109,7 +108,6 @@ build_single_target() {
   time ./c-ares.sh    "${CARES_VER_}" "${_cpu}"
   time ./nghttp2.sh "${NGHTTP2_VER_}" "${_cpu}"
   time ./openssl.sh "${OPENSSL_VER_}" "${_cpu}"
-  time ./librtmp.sh "${LIBRTMP_VER_}" "${_cpu}"
   time ./libssh2.sh "${LIBSSH2_VER_}" "${_cpu}"
   time ./curl.sh       "${CURL_VER_}" "${_cpu}"
 }
