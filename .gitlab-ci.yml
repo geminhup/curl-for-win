@@ -9,11 +9,11 @@ variables:
   GIT_DEPTH: "10"
   DOCKER_IMAGE: debian:unstable
 
-compile:
+build:
   script:
     - |
-      time docker pull "${DOCKER_IMAGE}"
-      time docker run -it -v "${PWD}:${PWD}" -w "${PWD}" \
+      docker pull "${DOCKER_IMAGE}"
+      docker run -it -v "${PWD}:${PWD}" -w "${PWD}" \
         --env-file <(env | grep -E '^(TRAVIS_|BINTRAY_|GPG_|VIRUSTOTAL_|CODESIGN_|CC|GITLAB_|CI_)') \
         "${DOCKER_IMAGE}" sh -c '
         cat /etc/*-release
