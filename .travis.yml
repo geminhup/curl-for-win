@@ -42,7 +42,7 @@ matrix:
       compiler: mingw-clang
       env: CPU=32
 
-before_install:
+script:
   - |
     if [ "$TRAVIS_OS_NAME" = 'linux' ] && \
        [ "${DOCKER_IMAGE}" = 'debian:unstable' ]; then
