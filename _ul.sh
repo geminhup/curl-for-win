@@ -18,7 +18,7 @@ export BINTRAY_USER='vszakats'
 #[ -n "${BINTRAY_USER}" ] || BINTRAY_USER="$(echo "${TRAVIS_REPO_SLUG}" | sed 's|/.*||')"
 #[ -n "${BINTRAY_USER}" ] || BINTRAY_USER="${USER}"
 
-PUBLISH_PROD_FROM='mac'
+PUBLISH_PROD_FROM='linux'
 
 do_upload() {
   arch_ext="$1"
